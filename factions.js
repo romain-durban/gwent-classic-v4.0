@@ -272,16 +272,13 @@ var factions = {
         name: "Velen",
         factionAbilityAction: async player => {
             await ui.notification("velen", 1000);
-            let cardsToDraw = player.velenCardDraw + player.getAllRowCards().filter(c => c.abilities.includes("soothsayer")).length;
+            let cardsToDraw = Math.min(player.velenCardDraw + player.getAllRowCards().filter(c => c.abilities.includes("soothsayer")).length, player.deck.cards.length);
             let cards = { cards: player.deck.cards.slice(0, cardsToDraw) };
             let targetCard = null;
             ui.helper.showMessage(String(player.destroyedCards)+" card(s) were destroyed last round.",3);
             if (player.controller instanceof ControllerAI) {
                 targetCard = player.controller.getHighestWeightCard(cards.cards);
             } else {
-                try {
-                    Carousel.curr.cancel();
-                } catch (err) { }
                 await ui.queueCarousel(cards, 1, (c, i) => targetCard = c.cards[i], c => true, true, true, "Choose up to one card to draw and play immediatly");
             }
             if (player.destroyedCards > 1) {

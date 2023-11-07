@@ -1198,19 +1198,86 @@ var ability_dict = {
     },
     lady_wood_brewess: {
         description: "Each time when your faction ability triggers, draw two cards instead of one. Play one of them, another one shuffle back into your deck.",
-        placed: card => card.holder.velenCardDraw = 2
+        placed: card => {
+            card.holder.disableLeader();
+            game.gameStart.push(async () => {
+                card.holder.velenCardDraw = 2;
+            });
+        }
     },
     lady_wood_weavess: {
         description: "Draw a Curse card from your deck and play it immediatly.",
-        gameStart: () => game.spyPowerMult = 1
+        activated: async card => {
+            let cards = card.holder.deck.cards.filter(c => c.key == "spe_curse");
+            if (cards.length == 0)
+                return false;
+            let targetCard = cards[0];
+            if (card.holder.controller instanceof ControllerAI) {
+                targetCard.autoplay(card.holder.deck);
+            } else {
+                // let player select where to play the card
+                card.holder.selectCardDestination(targetCard, card.holder.deck);
+            }
+        },
+        weight: card => {
+            if (card.holder.opponent().passed)
+                return 0;
+            return 8;
+        }
     },
     lady_wood_whispess: {
         description: "Take from your discard pile in your hand 3 or less unit cards, that died in the current round.",
-        gameStart: () => game.spyPowerMult = 1
+        activated: async card => {
+            let units = card.holder.grave.cards.filter(c => c.isUnit() && c.destructionRound == game.roundCount);
+            if (units.length == 0)
+                return false;
+            let cardsCount = Math.min(3, units.length);
+            let targetCards = [];
+            if (card.holder.controller instanceof ControllerAI) {
+                targetCards = card.holder.controller.getWeights(units).sort((a, b) => (b.weight - a.weight)).slice(0, cardsCount);
+            } else {
+                await ui.queueCarousel({ cards: units }, cardsCount, (c, i) => targetCards.push(c.cards[i]), c => true, true, true, "Choose up to " + String(cardsCount)+" to bring back to your hand.");
+            }
+            targetCards.forEach(async card => {
+                await board.toHand(card, card.holder.grave);
+            });
+        }
     },
     ghost_tree: {
         description: "Destroy the weakest unit card on the battlefield (any player). If there are several, choose one.",
-        gameStart: () => game.spyPowerMult = 1
+        activated: async card => {
+            let rows = board.row.filter(row => !row.isShielded());
+            let units = rows.reduce((a, r) => a.concat(r.minUnits()), [])
+                .reduce((a, c) => (!a.length || a[0].power > c.power) ? [c] : a[0].power === c.power ? a.concat([c]) : a, []);
+            let targetCard = null;
+            if (units.length > 0) {
+                if (card.holder.controller instanceof ControllerAI) {
+                    targetCard = units.filter(c => c.holder !== card.holder)[0];
+                } else {
+                    if (units.length == 1) {
+                        targetCard = units[0];
+                    } else {
+                        await ui.queueCarousel({ cards: units }, 1, (c, i) => targetCard = c.cards[i], () => true, true, false, "Choose which enemy card to destroy");
+                    }
+                }
+            } else {
+                return false;
+            }
+            if (targetCard) {
+                await targetCard.animate("scorch", true, false);
+                await board.toGrave(targetCard, targetCard.currentLocation);
+            }
+        },
+        weight: card => {
+            let rows = board.row.filter(row => !row.isShielded());
+            let units = rows.reduce((a, r) => a.concat(r.minUnits()), [])
+                .reduce((a, c) => (!a.length || a[0].power > c.power) ? [c] : a[0].power === c.power ? a.concat([c]) : a, [])
+                .filter(c => c.holder !== card.holder);
+            if (units.length == 0)
+                return 0;
+            return 5 + units[0].power;
+            
+        }
     },
     queen_calanthe: {
         description: "Play a unit then draw a card from you deck.",

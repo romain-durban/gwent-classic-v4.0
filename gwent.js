@@ -3388,11 +3388,11 @@ class UI {
                 return;
             ui.ytActive = true;
             ui.youtube.playVideo();
-            let timer = setInterval(() => {
+            let initbtntimer = setInterval(() => {
                 if (ui.youtube.getPlayerState() !== YT.PlayerState.PLAYING)
                     ui.youtube.playVideo();
                 else {
-                    clearInterval(timer);
+                    clearInterval(initbtntimer);
                     ui.toggleMusic_elem.classList.remove("fade");
                 }
             }, 500);
@@ -3711,13 +3711,13 @@ class UI {
     // Displays a Carousel menu of filtered container items that match the predicate.
     // Suspends gameplay until the Carousel is closed. Automatically picks random card if activated for AI player
     async queueCarousel(container, count, action, predicate, bSort, bQuit, title) {
-        if (game.currPlayer && game.currPlayer.controller instanceof ControllerAI) {
+        /*if (game.currPlayer && game.currPlayer.controller instanceof ControllerAI) {
             for (let i = 0; i < count; ++i) {
                 let cards = container.cards.reduce((a, c, i) => !predicate || predicate(c) ? a.concat([i]) : a, []);
                 await action(container, cards[randomInt(cards.length)]);
             }
             return;
-        }
+        }*/
         let carousel = new Carousel(container, count, action, predicate, bSort, bQuit, title);
         if (Carousel.curr === undefined || Carousel.curr === null) {
             carousel.start();
@@ -4423,12 +4423,12 @@ class HelperBox {
             var h = this;
             setTimeout(function () {
                 // Fading out - 1s
-                var interval = setInterval(function () {
+                var helperBoxInterval = setInterval(function () {
                     if (opacity > 0) {
                         opacity -= 0.1;
                         h.elem.style.opacity = opacity;
                     } else {
-                        clearInterval(interval); // Stop the interval when opacity reaches 0
+                        clearInterval(helperBoxInterval); // Stop the interval when opacity reaches 0
                         h.hide(); // Hide the element
                         h.elem.style.opacity = 1;
                     }
@@ -5374,16 +5374,16 @@ async function fade(fadeIn, elem, dur, delay) {
     elem.style.filter = "alpha(opacity=" + (op * 100) + ")";
     if (fadeIn)
         elem.classList.remove("hide");
-    let timer = setInterval(async function () {
+    let fadetimer = setInterval(async function () {
         op += (fadeIn ? 0.1 : -0.1);
         if (op >= 1) {
-            clearInterval(timer);
+            clearInterval(fadetimer);
             return;
         } else if (op <= 0.1) {
             elem.classList.add("hide");
             elem.style.opacity = "";
             elem.style.filter = "";
-            clearInterval(timer);
+            clearInterval(fadetimer);
             return;
         }
         elem.style.opacity = op;
@@ -5578,9 +5578,9 @@ function sleep(ms) {
 // Suspends execution until the predicate condition is met, checking every ms milliseconds
 function sleepUntil(predicate, ms) {
     return new Promise(resolve => {
-        let timer = setInterval(function () {
+        let sutimer = setInterval(function () {
             if (predicate()) {
-                clearInterval(timer);
+                clearInterval(sutimer);
                 resolve();
             }
         }, ms)

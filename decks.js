@@ -258,7 +258,7 @@ let default_decks = [{
     {
         "title": "Velen Deck 1 - Cursed Land",
         "description": "Deck relying mostly on bond, scorch and drawing cards",
-        "leader": "ve_lady_wood_weavess",
+        "leader": "ve_ghost_tree",
         "faction": "velen",
         "cards": [
             ["spe_horn", 1],
