@@ -239,6 +239,23 @@ class ControllerAI {
         return data;
     }
 
+    // Analyses the list of cards provided and computes their total weight based on the mapping provided (dict: ability=>weight)
+    // Return best X cards found with a weight higher than 0
+    selectBestCards(cards, count, weights, keepZeros=false) {
+        let wCards = [];
+        cards.forEach(c => {
+            let w = 0;
+            c.abilities.forEach(ab => {
+                if (ab in weights)
+                    w += weights[ab];
+            });
+            wCards.push({ card: c, weight: w });
+        });
+        if (keepZeros)
+            return wCards.sort((a, b) => b.weight - a.weight).slice(0, Math.min(wCards.length, count));
+        return wCards.filter(c => c.weight > 0).sort((a, b) => b.weight - a.weight).slice(0, Math.min(wCards.length, count));
+    }
+
     // Swaps a card from the hand with the deck if beneficial
     redraw() {
         let card = this.discardOrder({
@@ -348,6 +365,15 @@ class ControllerAI {
             await this.royalDecree(c);
         else
             await this.player.playCard(c);
+    }
+
+    // Plays any card with a default behaviour
+    async playCardDefault(card,src=null) {
+        let data_max = this.getMaximums();
+        let data_board = this.getBoardData();
+        if (src && src !== card.holder.hand)
+            board.moveTo(card, card.holder.hand, src);
+        await this.playCard(card, data_max, data_board)
     }
 
     // Plays a Commander's Horn to the most beneficial row. Assumes at least one viable row.
@@ -1221,7 +1247,7 @@ class Player {
         await this.playCardAction(card, async () => await board.moveTo(card, row, this.hand), endTurn);
     }
 
-    // Plays a card to the board
+    // Plays a card to the board from hand
     async playCard(card) {
         await this.playCardAction(card, async () => await card.autoplay(this.hand));
     }
@@ -1392,6 +1418,15 @@ class Player {
 
     async callLeader() {
         await ui.viewCard(player_me.leader, async () => await player_me.activateLeader());
+    }
+
+    replaceLeader(newLeader) {
+        this.leader = newLeader;
+        this.elem_leader.children[0].children[0].replaceWith(this.leader.elem);
+        this.enableLeader();
+        let ab = this.leader.abilities[0];
+        if (ability_dict[ab].placed)
+            ability_dict[ab].placed(this.leader);
     }
 
     async activateFactionAbility() {
@@ -2007,7 +2042,8 @@ class Row extends CardContainer {
         }
         this.updateState(card, false);
         if (runEffect) {
-            if (!card.decoyTarget) {
+            // Decoy targets do no trigger the removed effect, exept for cards holding a door opened, door closes when they leave the row
+            if (!card.decoyTarget || card.abilities.includes("door_o")) {
                 for (let x of card.removed)
                     x(card);
             } else {
@@ -2407,6 +2443,10 @@ class Board {
                     }
                 }
             }
+            // For Wild Hunt faction: Imlerith protects navigators
+            if (card.abilities.includes("door_o") && card.holder.leader.key === "wh_imlerith_general") {
+                destroy = false;
+            }
         }
         if (destroy) {
             await this.moveTo(card, "grave", source);
@@ -2419,7 +2459,8 @@ class Board {
             }
         } else {
             card.animate("comrade");
-            await protectors[0].animate("comrade");
+            if (protectors.length > 0)
+                await protectors[0].animate("comrade");
         }
     }
 
@@ -2921,7 +2962,9 @@ class Card {
         }
         this.abilities = (card_data.ability === "") ? [] : card_data.ability.split(" ");
         this.row = (this.faction === "weather") ? this.faction : card_data.row;
+        this.targetRows = (this.faction === "weather") ? card_data.row : "";
         this.filename = card_data.filename;
+        this.faceUp = true;
         this.placed = [];
         this.removed = [];
         this.activated = [];
@@ -3031,6 +3074,8 @@ class Card {
             this.desc += "<p><b>Hero:</b> " + ability_dict["hero"].description + "</p>";
 
         this.elem = this.createCardElem(this);
+        this.faceUpElem = this.elem;
+        this.faceDownElem = null;
     }
 
     // Returns the identifier for this type of card
@@ -3194,6 +3239,9 @@ class Card {
             num.classList.add("center");
             power.appendChild(num);
             row.style.backgroundImage = iconURL("card_row_" + card.row);
+        } else if (card.faction === "weather" && card.targetRows.length > 0) {
+            // Some weather cards can target different rows for a same weather type (such as White Frost)
+            row.style.backgroundImage = iconURL("card_row_" + card.targetRows);
         }
 
         let abi = document.createElement("div");
@@ -3231,6 +3279,36 @@ class Card {
 
         elem.appendChild(document.createElement("div")); // animation overlay
         return elem;
+    }
+
+    createCardBackElem() {
+        let elem = document.createElement("div");
+        elem.classList.add("card");
+        let f = this.faction;
+        if (f == "special") {
+            f = this.holder.leader.faction;
+            elem.classList.add("special");
+        }
+        elem.style.backgroundImage = iconURL("deck_back_" + f, "jpg");
+        return elem;
+    }
+
+    flip() {
+        if (this.faceUp) {
+            if (!this.faceDownElem) {
+                this.faceDownElem = this.createCardBackElem();
+                if (this.faceUpElem.style.left)
+                    this.faceDownElem.style.left = this.faceUpElem.style.left;
+            }
+            this.elem.replaceWith(this.faceDownElem);
+            this.elem = this.faceDownElem;
+        } else {
+            this.elem.replaceWith(this.faceUpElem);
+            this.elem = this.faceUpElem;
+            if (this.faceDownElem.style.left)
+                this.faceUpElem.style.left = this.faceDownElem.style.left;
+        }
+        this.faceUp = !this.faceUp;
     }
 
     // Indicates whether or not the abilities of this card are locked
@@ -4124,6 +4202,7 @@ class Carousel {
 
         if (!Carousel.elem) {
             Carousel.elem = document.getElementById("carousel");
+            Carousel.submitBtn = document.getElementById("carousel_submit");
             Carousel.elem.children[0].addEventListener("click", () => Carousel.curr.cancel(), false);
             window.addEventListener("keydown", function (e) {
                 if (e.keyCode == 81) {
@@ -4133,6 +4212,11 @@ class Carousel {
                     } catch (err) { }
                 }
             });
+            Carousel.submitBtn.addEventListener("click", function (e) {
+                Carousel.curr.selection.map(async s => await Carousel.curr.action(Carousel.curr.container, s));
+                Carousel.curr.selection = [];
+                Carousel.curr.exit();
+            });
         }
         this.elem = Carousel.elem;
         document.getElementsByTagName("main")[0].classList.remove("noclick");
@@ -4140,7 +4224,9 @@ class Carousel {
         this.elem.children[0].classList.remove("noclick");
         this.previews = this.elem.getElementsByClassName("card-lg");
         this.desc = this.elem.getElementsByClassName("card-description")[0];
-        this.title_elem = this.elem.children[2];
+        this.title_elem = document.getElementById("carousel_label");
+        this.submitBtn = Carousel.submitBtn;
+        
     }
 
     // Initializes the current Carousel
@@ -4162,6 +4248,12 @@ class Carousel {
             this.title_elem.classList.remove("hide");
         } else {
             this.title_elem.classList.add("hide");
+        }
+
+        if (this.bExit) {
+            this.submitBtn.classList.remove("hide");
+        } else {
+            this.submitBtn.classList.add("hide");
         }
 
         this.elem.classList.remove("hide");
@@ -5511,6 +5603,9 @@ function getPreviewElem(elem, card, nb = 0) {
         num.classList.add("card-large-power-strength");
         power.appendChild(num);
         row.style.backgroundImage = iconURL("card_row_" + card.row);
+    } else if (card.row === "weather" && card.targetRows.length > 0) {
+        // For rare weather cards which can target different rows for a same wheather type (such as White Frost)
+        row.style.backgroundImage = iconURL("card_row_" + card.targetRows);
     }
 
     if (c_abilities.length > 0) {
@@ -5529,7 +5624,7 @@ function getPreviewElem(elem, card, nb = 0) {
             if (str === "shield_c" || str == "shield_r" || str === "shield_s")
                 str = "shield";
             abi.style.backgroundImage = iconURL("card_ability_" + str);
-        } else if (card.row.includes("agile")) {
+        } else if (card.row.includes("agile") && !faction.startsWith("weather")) {
             abi.style.backgroundImage = iconURL("card_ability_" + "agile");
         }
 
@@ -5634,12 +5729,12 @@ document.onkeydown = function (e) {
 
 var elem_principal = document.documentElement;
 
-function openFullscreen() {
+async function openFullscreen() {
     try {
         if (elem_principal.requestFullscreen) elem_principal.requestFullscreen();
         else if (elem_principal.webkitRequestFullscreen) elem_principal.webkitRequestFullscreen();
         else if (elem_principal.msRequestFullscreen) elem_principal.msRequestFullscreen();
-        window.screen.orientation.lock("landscape");
+        await window.screen.orientation.lock("landscape");
     } catch (err) { }
 }
 

@@ -27,6 +27,25 @@ var ability_dict = {
             }
         }
     },
+    white_frost: {
+        name: "White Frost",
+        description: "Sets the strength of all cards on the 2 corresponding rows to 1 for both players.",
+        placed: async (card, row) => {
+            if(card.targetRows === "agile_cr")
+                card.abilities = ["frost", "fog"];
+            else if (card.targetRows === "agile_cs")
+                card.abilities = ["frost", "rain"];
+            else if (card.targetRows === "agile_rs")
+                card.abilities = ["fog", "rain"];
+            // If ability carried by a unit/hero card, draw the weather card from the deck
+            if (card.isUnit() || card.hero) {
+                let wCard = card.holder.deck.findCard(c => c.row === "weather" && c.abilities.includes("white_frost"));
+                if (wCard) {
+                    await wCard.autoplay(card.holder.deck);
+                }
+            }
+        }
+    },
     fog: {
         name: "Impenetrable Fog",
         description: "Sets the strength of all Ranged Combat cards to 1 for both players. ",
@@ -214,7 +233,7 @@ var ability_dict = {
                     try {
                         Carousel.curr.cancel();
                     } catch (err) { }
-                    await ui.queueCarousel(cards, 1, (c, i) => targetCard = c.cards[i], c => true, true, false, "Choose the card to draw and play keep");
+                    await ui.queueCarousel(cards, 1, (c, i) => targetCard = c.cards[i], c => true, true, false, "Choose the card to draw and keep");
                 }
                 cards.cards.forEach(c => {
                     if (c === targetCard) {
@@ -642,11 +661,6 @@ var ability_dict = {
             return Math.max(0, card.holder.controller.getHighestWeightCard(owncards.cards).power - card.holder.opponent().getAIController().getLowestWeightCard(opcards.cards).power)
 
         }
-    },
-    eredin_commander: {
-        description: "Double the strength of all your Close Combat units (unless a Commander's horn is also present on that row).",
-        activated: async card => await board.getRow(card, "close", card.holder).leaderHorn(card),
-        weight: (card, ai) => ai.weightHornRow(card, board.getRow(card, "close", card.holder))
     },
     eredin_bringer_of_death: {
         name: "Eredin : Bringer of Death",
@@ -1234,13 +1248,17 @@ var ability_dict = {
             let cardsCount = Math.min(3, units.length);
             let targetCards = [];
             if (card.holder.controller instanceof ControllerAI) {
-                targetCards = card.holder.controller.getWeights(units).sort((a, b) => (b.weight - a.weight)).slice(0, cardsCount);
+                targetCards = card.holder.controller.getWeights(units).sort((a, b) => (b.weight - a.weight)).slice(0, cardsCount).map(c => c.card);
             } else {
                 await ui.queueCarousel({ cards: units }, cardsCount, (c, i) => targetCards.push(c.cards[i]), c => true, true, true, "Choose up to " + String(cardsCount)+" to bring back to your hand.");
             }
             targetCards.forEach(async card => {
                 await board.toHand(card, card.holder.grave);
             });
+        },
+        weight: card => {
+            let units = card.holder.grave.cards.filter(c => c.isUnit() && c.destructionRound == game.roundCount);
+            return Math.min(15, units.length * 5);
         }
     },
     ghost_tree: {
@@ -1277,6 +1295,114 @@ var ability_dict = {
                 return 0;
             return 5 + units[0].power;
             
+        }
+    },
+    eredin_commander: {
+        description: "Choose on your battlefield two or less unit and/or hero cards and take them into your hand.",
+        activated: async card => {
+            let cards = card.holder.getAllRowCards().filter(c => c.hero || c.isUnit());
+            if (cards.length == 0)
+                return false;
+            let targetCards = [];
+            let cardsCount = Math.min(2, cards.length);
+            if (card.holder.controller instanceof ControllerAI) {
+                targetCards = card.holder.controller.selectBestCards(cards, cardsCount, { "spy": 10, "zirael": 10, "medic": 8, "sage": 4, "scorch_c": 4, "scorch_r": 4 }).map(c => c.card);
+            } else {
+                await ui.queueCarousel({ cards: cards }, cardsCount, (c, i) => targetCards.push(c.cards[i]), c => true, true, true, "Choose up to " + String(cardsCount)+" cards to take back into your hand.");
+            }
+            if (targetCards.length > 0) {
+                targetCards.forEach(async c => {
+                    await board.moveTo(c, card.holder.hand, c.currentLocation);
+                });
+            }
+        },
+        weight: card => {
+            let cards = card.holder.getAllRowCards().filter(c => c.hero || c.isUnit());
+            if (cards.length == 0)
+                return card.holder.controller.selectBestCards(cards, Math.min(2, cards.length), { "spy": 10, "medic": 8, "sage": 4, "scorch_c": 4 }).reduce((a,c) => a + c.weight,0);
+            return 5;
+
+        }
+    },
+    auberon_king: {
+        description: "Draw from your deck or graveyard any number of Navigator cards. Then choose in your hand the same number of cards and put them back in any place of the deck.",
+        activated: async card => {
+            let navigators = card.holder.deck.cards.filter(c => c.abilities.includes("door_o"))
+                .concat(card.holder.grave.cards.filter(c => c.abilities.includes("door_o")))
+                .sort((a, b) => b.basePower - a.basePower);
+            if (navigators.length < 1)
+                return false;
+            if (card.holder.controller instanceof ControllerAI) {
+                // AI draws only one, the strongest
+                await board.toHand(navigators[0], card.currentLocation);
+                let targetCard = card.holder.controller.getLowestWeightCard(card.holder.hand.cards);
+                if (targetCard)
+                    await board.toDeck(targetCard, card.holder.hand);
+            } else {
+                let targetCards = [];
+                await ui.queueCarousel({ cards: navigators }, navigators.length, (c, i) => targetCards.push(c.cards[i]), c => true, true, true, "Choose any number of cards to draw, but you'll have to put back into the deck an equal amount.");
+                await targetCards.forEach(async c => board.toHand(c, card.currentLocation));
+                await ui.queueCarousel(card.holder.hand, targetCards.length, async (c, i) => await board.toDeck(c.cards[i], card.holder.hand), c => true, true, false, "Choose " + String(targetCards.length) +" cards to put back into your deck.");
+            }
+        },
+        weight: card => {
+            let navigators = card.holder.deck.cards.filter(c => c.abilities.includes("door_o")).concat(card.holder.grave.cards.filter(c => c.abilities.includes("door_o")));
+            if (navigators.length < 1 || card.holder.deck.cards.length < 4)
+                return 0;
+            if (card.holder.hand.cards.filter(c => c.abilities.includes("door_o")).length > 0)
+                return 0;
+            if (game.roundCount < 3)
+                return 15;
+            if (game.roundCount > 2) {
+                navigators = card.holder.getAllRowCards().filter(c => c.abilities.includes("door_o"));
+                if (navigators.length == 0 || (navigators.length == 1 && card.holder.leader.key == "wh_caranthir_navigator"))
+                    return 15;
+            }
+            return 0;
+        }
+    },
+    winter_queen: {
+        description: "Draw any special card from your deck and play it immediatly.",
+        activated: async card => {
+            let specials = card.holder.deck.cards.filter(c => !(c.hero || c.isUnit()));
+            if (specials.length < 1)
+                return false;
+            let targetCard = null;
+            if (card.holder.controller instanceof ControllerAI) {
+                targetCard = card.holder.controller.getHighestWeightCard(specials)[0];
+                if (targetCard)
+                    card.holder.getAIController().playCardDefault(targetCard, card.holder.deck);
+            } else {
+                await ui.queueCarousel({ cards: specials }, 1, (c, i) => targetCard = c.cards[i], c => true, true, false, "Choose a special card to play immediatly.");
+                if (targetCard) {
+                    // let player select where to play the card
+                    let choiceDone = false;
+                    card.holder.selectCardDestination(targetCard, card.holder.deck, async () => {
+                        choiceDone = true;
+                        ui.enablePlayer(true);
+                    });
+                    // We sleep until the choice is made, otherwise the turn continues as normal
+                    await sleepUntil(() => choiceDone, 100);
+                }
+            }
+        },
+        weight: card => {
+            let specials = card.holder.deck.cards.filter(c => !(c.hero || c.isUnit()));
+            if (specials.length < 1)
+                return 0;
+            return card.holder.controller.getWeights(specials).sort((a, b) => b.weight - a.weight)[0].weight;
+        }
+    },
+    caranthir_navigator: {
+        description: "You can open two Dimensional Doors at the same time (but only if there is at least one navigator in each of these 2 rows).",
+        placed: card => {
+            card.holder.disableLeader();
+        }
+    },
+    imlerith_general: {
+        description: "Passive: Imlerith will shield Navigators from destruction.",
+        placed: card => {
+            card.holder.disableLeader();
         }
     },
     queen_calanthe: {
@@ -2137,5 +2263,112 @@ var ability_dict = {
         name: "Curse",
         description: "Place on your or opponent's battlefield on any row. Next unit card (not hero) that will be placed on this row will be destroyed and it's abilities will not work",
         weight: (card) => 20
+    },
+    door: {
+        name: "Dimensional Door",
+        description: "While the door is active, at the end of each of your turns you should draw one card from your deck. If the row of the card matches the row of the door, play it immediatly, otherwise put it back into the deck. If it does not have a row, you can play it or put it back into the deck.",
+        weight: (card) => 0
+    },
+    door_o: {
+        name: "Dimensional Door Opening",
+        description: "Opens the dimensional door of the row it is in, if none other is opened",
+        weight: (card) => 0,
+        placed: async card => {
+            if (card.isLocked())
+                return;
+            let openedDoors = card.holder.getAllRows().map(r => r.special).reduce((a, c) => a.concat(c.cards.filter(c => c.key === "spe_dimensional_door" && c.faceUp)), []);
+            if (openedDoors.length == 0 || (card.holder.leader.key === "wh_caranthir_navigator" && openedDoors.length < 2)) {
+                let door = card.currentLocation.special.findCard(c => c.key === "spe_dimensional_door");
+                if (door && !door.faceUp)
+                    door.flip();
+            }
+        },
+        removed: async (card) => {
+            // If last navigator in row, close the door
+            let navigators = card.currentLocation.cards.filter(c => c.abilities.includes("door_o"));
+            if (navigators.length == 0) {
+                let door = card.currentLocation.special.findCard(c => c.key === "spe_dimensional_door");
+                if (door && door.faceUp)
+                    door.flip();
+            }
+        }
+    },
+    sage: {
+        name: "Sage",
+        description: "Place on your battlefield and draw 4 cards from your deck. Look at them and put them back at the top or bottom of the deck in the order of your choice.",
+        weight: (card) => 20,
+        placed: async card => {
+            if (card.isLocked())
+                return;
+            if (card.holder.controller instanceof ControllerAI)
+                return; // Meh, too tricky to implement for the AI, just skip
+            if (card.holder.deck.cards.length > 0) {
+                await ui.startDeckSorter(card.holder.deck.cards.slice(0, Math.min(4, card.holder.deck.cards.length)), card.holder, null, "Re-order the cards back into the deck", true);
+            }
+        }
+    },
+    zirael: {
+        name: "Zirael",
+        description: "Place on your battlefield and draw 2 cards from your deck. Play them immediatly or put them back at the top or bottom of the deck in the order of your choice.",
+        weight: (card) => 20,
+        placed: async card => {
+            if (card.isLocked())
+                return;
+            let cards = card.holder.deck.cards.slice(0, Math.min(2, card.holder.deck.cards.length));
+            if (cards.length == 0)
+                return;
+            let targetCards = [];
+            if (card.holder.controller instanceof ControllerAI) {
+                targetCards = card.holder.controller.getWeights(cards).filter(c => c.weight > 0).map(c => c.card);
+            } else {
+                await ui.queueCarousel({ cards: cards }, Math.min(2, card.holder.deck.cards.length), (c, i) => targetCards.push(c.cards[i]), c => true, true, true, "Choose up to 2 cards to play right away.");
+            }
+            // Discarding cards left aside
+            cards.forEach(c => {
+                if (!targetCards.includes(c)) {
+                    card.holder.deck.removeCard(c);
+                    card.holder.deck.addCard(c);
+                }
+            });
+            for (var i = 0; i < targetCards.length; i++) {
+                let c = targetCards[i];
+                if (card.holder.controller instanceof ControllerAI) {
+                    await card.holder.getAIController().playCardDefault(c, card.holder.deck);
+                } else {
+                    // let player select where to play the card
+                    let choiceDone = false;
+                    card.holder.selectCardDestination(c, card.holder.deck, async () => {
+                        choiceDone = true;
+                        ui.enablePlayer(true);
+                    });
+                    // We sleep until the choice is made, otherwise the turn continues as normal
+                    await sleepUntil(() => choiceDone, 100);
+                }
+            }
+        }
+    },
+    naglfar: {
+        name: "Naglfar",
+        description: "Place on your battlefield and draw 2 cards or less from your deck with the word 'Naglfar' in their name and play them immediatly.",
+        weight: (card) => 20,
+        placed: async card => {
+            if (card.isLocked())
+                return;
+            // Find available Naglfar cards in the deck
+            let cards = card.holder.deck.cards.filter(c => c.name.toLowerCase().includes("naglfar"));
+            if (cards.length == 0)
+                return;
+            let targetCards = [];
+            // Select up to 2, AI takes highest weights
+            if (card.holder.controller instanceof ControllerAI) {
+                targetCards = card.holder.controller.getWeights(cards).sort((a, b) => b.weight - a.weight).slice(0, Math.min(2, cards.length)).map(c => c.card);
+            } else {
+                await ui.queueCarousel({ cards: cards }, Math.min(2, card.holder.deck.cards.length), (c, i) => targetCards.push(c.cards[i]), c => true, true, true, "Choose up to 2 cards to play right away.");
+            }
+            for (var i = 0; i < targetCards.length; i++) {
+                let c = targetCards[i];
+                await card.holder.getAIController().playCardDefault(c, card.holder.deck); // Should be enought, all these cards play on a single row
+            }
+        }
     },
 };

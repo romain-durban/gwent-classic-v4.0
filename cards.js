@@ -3357,6 +3357,346 @@ var ext_ve_cards = {
     },
 };
 
+var ext_wh_cards = {
+    "spe_dimensional_door": {
+        "name": "Dimensional Door",
+        "deck": "special wild_hunt",
+        "row": "",
+        "strength": "",
+        "ability": "door",
+        "filename": "dimensional_door",
+        "count": "0",
+        "quote": "Very useful for travels to other dimensions and bringing apocalypse upon the world."
+    },
+    "spe_white_frost_1": {
+        "name": "White Frost",
+        "deck": "weather wild_hunt",
+        "row": "agile_cr",
+        "strength": "",
+        "ability": "white_frost",
+        "filename": "white_frost",
+        "count": "1",
+        "quote": "It is the beginning of the end!"
+    },
+    "spe_white_frost_2": {
+        "name": "White Frost",
+        "deck": "weather wild_hunt",
+        "row": "agile_cs",
+        "strength": "",
+        "ability": "white_frost",
+        "filename": "white_frost",
+        "count": "1",
+        "quote": "It is the beginning of the end!"
+    },
+    "spe_white_frost_3": {
+        "name": "White Frost",
+        "deck": "weather wild_hunt",
+        "row": "agile_rs",
+        "strength": "",
+        "ability": "white_frost",
+        "filename": "white_frost",
+        "count": "1",
+        "quote": "It is the beginning of the end!"
+    },
+    "wh_eredin_commander": {
+        "name": "Eredin Bréacc Glas: Commander of Dearg Ruadhri",
+        "deck": "wild_hunt",
+        "row": "leader",
+        "strength": "",
+        "ability": "eredin_commander",
+        "filename": "eredin_commander",
+        "count": "1",
+        "quote": "Any last words?"
+    },
+    "wh_auberon_king": {
+        "name": "Auberon Muirketah: King of Aen Elle",
+        "deck": "wild_hunt",
+        "row": "leader",
+        "strength": "",
+        "ability": "auberon_king",
+        "filename": "auberon_king",
+        "count": "1",
+        "quote": "After having lived over six hundred and fifty years, little remains to excite."
+    },
+    "wh_winter_queen": {
+        "name": "Winter Queen: Destroyer of the Worlds",
+        "deck": "wild_hunt",
+        "row": "leader",
+        "strength": "",
+        "ability": "winter_queen",
+        "filename": "winter_queen",
+        "count": "1",
+        "quote": "Truth is but a shard of ice."
+    },
+    "wh_caranthir_navigator": {
+        "name": "Caranthir Ar-Feiniel: Sorcerer-Navigator",
+        "deck": "wild_hunt",
+        "row": "leader",
+        "strength": "",
+        "ability": "caranthir_navigator",
+        "filename": "caranthir_navigator",
+        "count": "1",
+        "quote": "A favorite son who chose a life of villainy."
+    },
+    "wh_imlerith_general": {
+        "name": "Imlerith: General of the Wild Hunt",
+        "deck": "wild_hunt",
+        "row": "leader",
+        "strength": "",
+        "ability": "imlerith_general",
+        "filename": "imlerith_general",
+        "count": "1",
+        "quote": "The sisters said you would come. They saw you arrive in the water's surface."
+    },
+    "wh_wild_hunt_warrior_1": {
+        "name": "Wild Hunt Warrior",
+        "id": 2,
+        "deck": "wild_hunt",
+        "row": "close",
+        "strength": "3",
+        "ability": "bond",
+        "filename": "wild_hunt_warrior_1",
+        "count": "3",
+        "target": "wh_wild_hunt_warrior",
+        "quote": "The White Frost is coming."
+    },
+    "wh_wild_hunt_warrior_2": {
+        "name": "Wild Hunt Warrior",
+        "id": 2,
+        "deck": "wild_hunt",
+        "row": "close",
+        "strength": "4",
+        "ability": "bond",
+        "filename": "wild_hunt_warrior_2",
+        "count": "1",
+        "target": "wh_wild_hunt_warrior",
+        "quote": "THe considers it an excellent joke - to split the skulls of the living with the skulls of the dead. "
+    },
+    "wh_imlerith": {
+        "name": "Imlerith",
+        "deck": "wild_hunt",
+        "row": "close",
+        "strength": "7",
+        "ability": "scorch_c",
+        "filename": "imlerith",
+        "count": "1",
+        "quote": "He boasted that no weapon would ever pierce his armor. And he was right — even in death."
+    },
+    "wh_geralt": {
+        "name": "Geralt of Rivia",
+        "deck": "wild_hunt",
+        "row": "close",
+        "strength": "8",
+        "ability": "hero",
+        "filename": "geralt",
+        "count": "1",
+        "quote": "I'm only here for Yen."
+    },
+    "wh_cirilla": {
+        "name": "Cirilla",
+        "deck": "wild_hunt",
+        "row": "close",
+        "strength": "0",
+        "ability": "hero zirael",
+        "filename": "cirilla",
+        "count": "1",
+        "quote": "Zireael possesses a great power she cannot control."
+    },
+    "wh_avallach": {
+        "name": "Avallac'h",
+        "deck": "wild_hunt",
+        "row": "close",
+        "strength": "6",
+        "ability": "hero sage",
+        "filename": "avallach",
+        "count": "1",
+        "quote": "You humans have… unusual tastes."
+    },
+    "wh_wild_hunt_rider_1": {
+        "name": "Wild Hunt Rider",
+        "deck": "wild_hunt",
+        "row": "agile_cr",
+        "strength": "5",
+        "ability": "",
+        "filename": "wild_hunt_rider_1",
+        "count": "2",
+        "quote": "First the buffalo horns atop their helms penetrate one's view, then the crest betwixt them."
+    },
+    "wh_wild_hunt_rider_2": {
+        "name": "Wild Hunt Rider",
+        "deck": "wild_hunt",
+        "row": "agile_rs",
+        "strength": "5",
+        "ability": "",
+        "filename": "wild_hunt_rider_2",
+        "count": "2",
+        "quote": "The cavalcade of wraiths on undead horses galloping accross the sky."
+    },
+    "wh_wild_hunt_rider_3": {
+        "name": "Wild Hunt Rider",
+        "deck": "wild_hunt",
+        "row": "agile_cs",
+        "strength": "5",
+        "ability": "",
+        "filename": "wild_hunt_rider_3",
+        "count": "2",
+        "quote": "They paint the sky with snow and the earth with fire."
+    },
+    "wh_aen_elle_conqueror_1": {
+        "name": "Aen Elle Conqueror",
+        "id": 1,
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "4",
+        "ability": "bond",
+        "filename": "aen_elle_conqueror_1",
+        "count": "1",
+        "quote": "The end of one world can be the beginning of another."
+    },
+    "wh_aen_elle_conqueror_2": {
+        "name": "Aen Elle Conqueror",
+        "id": 2,
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "4",
+        "ability": "bond",
+        "filename": "aen_elle_conqueror_2",
+        "count": "1",
+        "quote": "If they will not submit, they shall be driven out!"
+    },
+    "wh_aen_elle_conqueror_3": {
+        "name": "Aen Elle Conqueror",
+        "id": 3,
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "4",
+        "ability": "bond",
+        "filename": "aen_elle_conqueror_3",
+        "count": "1",
+        "quote": "For his noble kind morality is but a whim enjoyed by others. More specifically, those who lose."
+    },
+    "wh_wild_hunt_hound_1": {
+        "name": "Wild Hunt Hound",
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "7",
+        "ability": "",
+        "filename": "wild_hunt_hound_1",
+        "count": "1",
+        "quote": "Cry 'Havoc!', and let slip the dogs of war."
+    },
+    "wh_wild_hunt_hound_2": {
+        "name": "Wild Hunt Hound",
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "7",
+        "ability": "",
+        "filename": "wild_hunt_hound_2",
+        "count": "1",
+        "quote": "Who's a good boy? Well, surely not him."
+    },
+    "wh_yennefer_captive": {
+        "name": "Yennefer: Eredin's Captive",
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "5",
+        "ability": "hero medic",
+        "filename": "yennefer_captive",
+        "count": "1",
+        "quote": "I'll exchange her for your sould, witcher!"
+    },
+    "wh_nithral": {
+        "name": "Nithral",
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "7",
+        "ability": "hero morale",
+        "filename": "nithral",
+        "count": "1",
+        "quote": "Eredin's personal cavalcade includes only the most brutal and most ferocious of the Aen Elle."
+    },
+    "wh_geels": {
+        "name": "Ge'els",
+        "deck": "wild_hunt",
+        "row": "ranged",
+        "strength": "6",
+        "ability": "hero sage",
+        "filename": "geels",
+        "count": "1",
+        "quote": "Paintings should convey emotion, not words."
+    },
+    "wh_naglfar_taskmaster": {
+        "name": "Naglfar's Taskmaster",
+        "deck": "wild_hunt",
+        "row": "siege",
+        "strength": "4",
+        "ability": "medic",
+        "filename": "naglfar_taskmaster",
+        "count": "1",
+        "quote": "She ensures the ship is sustained by squeezing the life essence from those insignificant human vermin."
+    },
+    "wh_naglfar_crew": {
+        "name": "Naglfar's Crew",
+        "deck": "wild_hunt",
+        "row": "siege",
+        "strength": "3",
+        "ability": "bond",
+        "filename": "naglfar_crew",
+        "count": "4",
+        "quote": "Humans don’t know what powers the Naglfar. For those that discover the truth... Well, it’s already too late for them."
+    },
+    "wh_naglfar_cartographer": {
+        "name": "Naglfar's Cartographer",
+        "deck": "wild_hunt",
+        "row": "siege",
+        "strength": "4",
+        "ability": "sage",
+        "filename": "naglfar_cartographer",
+        "count": "1",
+        "quote": "We're almost there, my lord!"
+    },
+    "wh_naglfar": {
+        "name": "Naglfar",
+        "deck": "wild_hunt",
+        "row": "siege",
+        "strength": "0",
+        "ability": "hero naglfar",
+        "filename": "naglfar",
+        "count": "1",
+        "quote": "Naglfar will wage the final battle of good and evil known as Ragh nar Roog."
+    },
+    "wh_navigator_1": {
+        "name": "Navigator",
+        "deck": "wild_hunt",
+        "row": "agile_crs",
+        "strength": "3",
+        "ability": "door_o",
+        "filename": "navigator_1",
+        "count": "1",
+        "quote": "They are powerful mages who had the ability to manipulate space and to open portals between different worlds."
+    },
+    "wh_navigator_2": {
+        "name": "Navigator",
+        "deck": "wild_hunt",
+        "row": "agile_crs",
+        "strength": "4",
+        "ability": "door_o",
+        "filename": "navigator_2",
+        "count": "1",
+        "quote": "They would guide the Riders of the Hunt along mystic pathways through time and space in order to reach other worlds."
+    },
+    "wh_navigator_3": {
+        "name": "Navigator",
+        "deck": "wild_hunt",
+        "row": "agile_crs",
+        "strength": "5",
+        "ability": "door_o",
+        "filename": "navigator_3",
+        "count": "1",
+        "quote": "All of them are apprentices of Avallac'h"
+    },
+};
+
 var ext_wu_cards = {
     "wu_vilgefortz_magician_kovir": {
         "name": "Vilgefortz: Magician of Kovir",
@@ -6789,6 +7129,7 @@ card_dict = Object.assign({}, card_dict, ext_sk_cards);
 card_dict = Object.assign({}, card_dict, ext_re_cards);
 card_dict = Object.assign({}, card_dict, ext_to_cards);
 card_dict = Object.assign({}, card_dict, ext_ve_cards);
+card_dict = Object.assign({}, card_dict, ext_wh_cards);
 
 card_dict = Object.assign({}, card_dict, ext_wu_cards);
 card_dict = Object.assign({}, card_dict, ext_lr_cards);

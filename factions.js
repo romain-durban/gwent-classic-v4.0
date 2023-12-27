@@ -303,7 +303,7 @@ var factions = {
             }
             if (player.controller instanceof ControllerAI) {
                 if(targetCard)
-                    targetCard.autoplay(player.deck);
+                    player.controller.playCardDefault(targetCard, player.deck);
                 // If more than 1 card was destroyed, we trigger the faction ability once more
                 if (player.destroyedCards > 0) {
                     await factions["velen"].factionAbilityAction(player);
@@ -348,5 +348,109 @@ var factions = {
             return 0;
         },
         unavailableSpecials: []
+    },
+    wild_hunt: {
+        name: "Wild Hunt",
+        factionAbilityAction: async player => {
+            if (player.deck.cards.length == 0)
+                return;
+            let openedDoors = player.getAllRows().map(r => r.special).reduce((a, c) => a.concat(c.cards.filter(c => c.key === "spe_dimensional_door" && c.faceUp)), []);
+            if (openedDoors.length > 0) {
+                for (var i = 0; i < openedDoors.length; i++) {
+                    if (player.deck.cards.length > 0) {
+                        let door = openedDoors[i];
+                        let card = player.deck.cards.slice(0, 1)[0];
+                        ui.showPreviewVisuals(card);
+                        await sleep(2000);
+                        let play = false;
+                        if (card.hero || card.isUnit()) {
+                            if (card.getPlayableRows().filter(r => r === door.currentLocation.row).length > 0) {
+                                play = true;
+                            } else {
+                                ui.helper.showMessage("Card drawn cannot be played on a row with an opened door.", 2);
+                            }
+                        } else {
+                            if (!(player.controller instanceof ControllerAI)) {
+                                play = await ui.popup("Play [E]", (p) => p.choice = true, "Discard [Q]", (p) => p.choice = false, "Play the card?", "Do you want to play this special card or put it back in the deck?");
+                            } else {
+                                if (player.controller.getWeights([card])[0].weight > 0)
+                                    play = true;
+                            }
+                        }
+                        ui.preview.classList.add("hide");
+                        ui.previewCard = null;
+                        if (play) {
+                            if (!(player.controller instanceof ControllerAI)) {
+                                // let player select where to play the card
+                                let choiceDone = false;
+                                player.selectCardDestination(card, player.deck, async () => {
+                                    choiceDone = true;
+                                    ui.enablePlayer(true);
+                                });
+                                // We sleep until the choice is made, otherwise the turn continues as normal
+                                await sleepUntil(() => choiceDone, 100);
+                            } else {
+                                player.getAIController().playCardDefault(card, player.deck);
+                            }
+                        } else {
+                            player.deck.removeCard(card);
+                            player.deck.addCard(card);
+                        }
+                    }
+                }
+            }
+        },
+        factionAbility: player => {
+            game.gameStart.push(async () => {
+                player.getAllRows().forEach(r => {
+                    let c = new Card("spe_dimensional_door", card_dict["spe_dimensional_door"], player);
+                    c.flip(); // Starts the game face down
+                    c.noRemove = true; // Stays on the board until the end
+                    r.special.addCard(c);
+                });
+                // Draws an additional card
+                player.deck.draw(player.hand);
+                player.playedLeaders = [player.leader.key];
+                return false;
+            });
+            game.roundStart.push(async () => {
+                // We put all Dimensional Doors face down again
+                player.getAllRows().forEach(r => {
+                    let door = r.special.findCard(c => c.abilities.includes("door"));
+                    if (door && door.faceUp)
+                        door.flip();
+                });
+                // Select a different leader starting from round 2
+                if (game.roundCount > 1) {
+                    let availableLeaders = Object.keys(card_dict).filter(cid => card_dict[cid].deck === "wild_hunt" && card_dict[cid].row === "leader" && !player.playedLeaders.includes(cid))
+                        .map(cid => new Card(cid, card_dict[cid], player));
+                    let targetCard = null;
+                    if (player.controller instanceof ControllerAI) {
+                        let rand = randomInt(availableLeaders.length);
+                        targetCard = availableLeaders[rand];
+                    } else {
+                        await ui.queueCarousel({ cards: availableLeaders }, 1, (c, i) => targetCard = c.cards[i], c => true, true, false, "Select the next leader to start the round with");
+                    }
+                    if (targetCard) {
+                        player.playedLeaders.push(targetCard.key);
+                        player.replaceLeader(targetCard);
+                    }
+                }
+                
+                return false;
+            });
+            // On player's turn end, try to run the faction ability
+            game.turnEnd.push(async () => {
+                if(game.currPlayer === player)
+                    await factions["wild_hunt"].factionAbilityAction(player);
+            });
+        },
+        description: "At the beginning of each round select a different Leader card. You will be able to use its ability in upcoming round before chosing another. Start the game with 11 cards instead of 10",
+        activeAbility: false,
+        abilityUses: 0,
+        weight: (player) => {
+            return 0;
+        },
+        unavailableSpecials: ["spe_horn","spe_fog","spe_rain","spe_frost"]
     },
 }

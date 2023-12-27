@@ -290,6 +290,35 @@ let default_decks = [{
             ["ve_hungry_wolves_3", 1],
             ["ve_abandoned_girl", 1]
         ]
+    },
+    {
+        "title": "Wild Hunt Deck 1 - Worlds Conquest",
+        "description": "Deck relying mostly on bond door mechanic",
+        "leader": "wh_winter_queen",
+        "faction": "wild_hunt",
+        "cards": [
+            ["spe_decoy", 2],
+            ["spe_scorch", 1],
+            ["spe_clear", 1],
+            ["spe_white_frost_1", 1],
+            ["wh_geralt", 1],
+            ["wh_imlerith", 1],
+            ["wh_nithral", 1],
+            ["wh_avallach", 1],
+            ["wh_geels", 1],
+            ["wh_navigator_3", 1],
+            ["wh_wild_hunt_rider_1", 2],
+            ["wh_wild_hunt_rider_2", 2],
+            ["wh_wild_hunt_rider_3", 2],
+            ["wh_yennefer_captive", 1],
+            ["wh_naglfar_cartographer", 1],
+            ["wh_naglfar_taskmaster", 1],
+            ["wh_navigator_2", 1],
+            ["wh_naglfar_crew", 4],
+            ["wh_navigator_1", 1],
+            ["wh_cirilla", 1],
+            ["wh_naglfar", 1]
+        ]
     }
 ];
 
